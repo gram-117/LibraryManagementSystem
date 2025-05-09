@@ -1,19 +1,49 @@
 import java.util.Scanner;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * A library management class. Has a simple shell that users can interact with to add/remove/checkout/list books in the library.
  * Also allows saving the library state to a file and reloading it from the file.
  */
 public class Library {
-
-
+    /**
+     * books are stored in database using ISBN 
+     * the ISBN can internally found using author and title
+     */
+    //private HashMap<String, Book> bookDatabase;
+    private HashMap<String, ArrayList<Book>> bookDatabase;
+    private HashMap<String, String> ISBNlookup;
     /**
      * Adds a book to the library. If the library already has this book then it
      * adds the number of copies the library has.
      */
     public void addBook(Book book) {
-        // TODO: Implement this method.
-        throw new UnsupportedOperationException("not implemented");
+        // create new book[] if new book and add into ISBN loopup the 
+        String titleAuthor = book.getTitle() + "|" + book.getAuthor();
+        String isbn = book.getIsbn();
+        if (bookDatabase.get(isbn) == null) {
+            ISBNlookup.put(titleAuthor, isbn);
+            ArrayList<Book> bookArr = new ArrayList();
+            bookArr.add(book);
+            bookDatabase.put(isbn, bookArr); // set book copies to 1 somewhere else?
+        } else {
+            (bookDatabase.get(isbn)).add(book);
+            book.addCopies(bookDatabase.get(isbn).size()); // size of Arraylist = num of books? maybe - 1?
+            for (Book oneBook: bookDatabase.get(isbn)) {
+                //iterate and update size? unless able to be handled somewhere else
+            }
+            //have a new arraylist for each release year? 
+        }
+        //easier but ignores different publication dates 
+        // String titleAuthor = book.getTitle() + "|" + book.getAuthor();
+        // String isbn = book.getIsbn();
+        // ISBNlookup.put(titleAuthor, isbn);
+        // if (bookDatabase.get(isbn) == null) {
+        //     bookDatabase.put(isbn, book);
+        // } else {
+        //     (bookDatabase.get(isbn)).addCopies(1);
+        // }            
     }
 
     /**
@@ -22,6 +52,10 @@ public class Library {
      */
     public void checkout(String isbn) {
         // TODO: Implement this method.
+        // look up book if it DNE add it other wise
+        // increase the number of copies 
+        // maybe add a checked out private method to book class, iterate through arraylist until you 
+        // find not checked out book, else throw error
         throw new UnsupportedOperationException("not implemented");
     }
 
@@ -38,8 +72,14 @@ public class Library {
      * doesnt exist.
      */
     public Book findByTitleAndAuthor(String title, String author) {
-        // TODO: Implement this method.
-        throw new UnsupportedOperationException("not implemented");
+        String titleAndAuthor = title + '|' + author;
+        String isbn = ISBNlookup.get(titleAndAuthor);
+        Book book = bookDatabase.get(isbn);
+        if (book == null) {
+            // throw ex "not found"
+            // maybe check if copies == 0? unless this is handled somewhere else
+        }
+        return book;
     }
 
     /**
@@ -47,8 +87,11 @@ public class Library {
      * doesnt exist.
      */
     public Book findByISBN(String isbn) {
-        // TODO: Implement this method.
-        throw new UnsupportedOperationException("not implemented");
+        Book book = bookDatabase.get(isbn);
+        if (book == null) {
+            //throw ex "not found"
+        }
+        return book;
     }
 
     /**
