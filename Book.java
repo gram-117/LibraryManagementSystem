@@ -1,6 +1,6 @@
 /**
  * Encapusulates information about a book.
- * @author Balaji Srinivasan
+ * @author 
  */
 public class Book {
     String title;
@@ -10,6 +10,7 @@ public class Book {
     // number of copies in the library
     // NOTE: This is not the number of copies available in the library
     int numberOfCopies; 
+    int copiesav;
 
     /**
      * Constructor. Most properties (except number of copies are read only)
@@ -20,6 +21,7 @@ public class Book {
         this.isbn = isbn;
         this.publicationYear = publicationYear;
         this.numberOfCopies = numberOfCopies;
+        this.copiesav = numberOfCopies;
     }
 
     /**
@@ -62,6 +64,7 @@ public class Book {
      */
     public void addCopies(int numCopiesToAdd) {
         numberOfCopies += numCopiesToAdd;
+        copiesav += numCopiesToAdd;
     }
 
     /** 
@@ -69,8 +72,10 @@ public class Book {
      * @throws RuntimeException if no copies are available to check out.
      */
     public void checkout() {
-        // TODO: Implement this method.
-        throw new UnsupportedOperationException("Not implemented");
+        if(copiesav == 0)
+            throw new IllegalStateException("There are no copies :(");
+        else
+            copiesav--;
     } 
 
     /** 
@@ -78,20 +83,29 @@ public class Book {
      * @throws RuntimeException if no copies have been checked out.
      */
     public void checkin() {
-        // TODO: Implement this method.
-        throw new UnsupportedOperationException("Not implemented");
+        if(copiesav == numberOfCopies)
+            throw new IllegalStateException("No copies have been checked out :/");
+        else
+            copiesav++;
     }
 
     @Override
     public int hashCode() {
-        // TODO: Implement an appropriate hash code for a book.
-        throw new UnsupportedOperationException("Not implemented");
+        int result = 11;     
+        
+        result = 31 * result + (title  != null ? title.hashCode()  : 0);
+        result = 31 * result + (author != null ? author.hashCode() : 0);
+        result = 31 * result + (isbn   != null ? isbn.hashCode()   : 0);
+        
+        return result;
     }
 
     @Override
     public boolean equals(Object that) {
-        // TODO: Implement this method.
         // NOTE: Two books are the same only if the Title, Author, and ISBN matches
-        throw new UnsupportedOperationException("Not implemented");
+        if (this == that) return true;
+        if (!(that instanceof Book)) return false;
+        Book that = (Book)that;
+        return this.author.equals(that.getAuthor()) && this.title.equals(that.getTitle()) && this.isbn.equals(that.getIsbn())
     }
 }
