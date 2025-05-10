@@ -26,7 +26,7 @@ public class Library {
      */
     public void addBook(Book book) {
         // create new book[] if new book and add into ISBN loopup the 
-        String titleAuthor = book.getTitle() + "|" + book.getAuthor();
+        String titleAuthor = book.getTitle() + "," + book.getAuthor();
         String isbn = book.getIsbn();
         if (bookDatabase.get(isbn) == null) {
             ISBNlookup.put(titleAuthor, isbn);
@@ -80,7 +80,7 @@ public class Library {
     public Book findByTitleAndAuthor(String title, String author) {
         String titleAndAuthor = title + '|' + author;
         String isbn = ISBNlookup.get(titleAndAuthor);
-        Book book = bookDatabase.get(isbn);
+        Book book = bookDatabase.get(isbn); // needs update based on implmentation
         if (book == null) {
             // throw ex "not found"
             // maybe check if copies == 0? unless this is handled somewhere else
@@ -93,7 +93,7 @@ public class Library {
      * doesnt exist.
      */
     public Book findByISBN(String isbn) {
-        Book book = bookDatabase.get(isbn);
+        Book book = bookDatabase.get(isbn); // needs update based on implmentation
         if (book == null) {
             //throw ex "not found"
         }
@@ -112,8 +112,11 @@ public class Library {
             for (Map.Entry<String, ArrayList<Book>> item : bookSet) {
                 ArrayList<Book> bookArr = item.getValue();
                 for (Book book : bookArr) {
-                    //add a new formatted line for each book, containg all of the necessary data:
-                    //title, author, checked in/out, publish date, isbn
+                    String bookInfo = book.getTitle() + ',' + book.getAuthor() + ',' + 
+                        book.getIsbn() + ',' + book.getPublicationYear() + ',' + 
+                        book.getNumberOfCopies();
+                    writer.write(bookInfo);
+                    writer.newLine();
                 }
             }
         }
@@ -127,15 +130,22 @@ public class Library {
      * in this library is cleared before loading from the file.
      */
     public void load(String filename) {
+        bookDatabase.clear();
+        ISBNlookup.clear();
+
         File inFile = new File(filename);
         try {
             BufferedReader reader = new BufferedReader(new FileReader(inFile));
             String line; 
             while (((line = reader.readLine()) != null)) {
-                //each line has data for a book w/ specific formatting
-                // reading in all the data and then 
-                //add book to hashmap
-                //add isbn & author|title pair to secondary hashmap
+                // split line in String[] with each String containing:
+                // title, author, isbn, publicationyear, and number of copies
+                // in that order
+                String[] bookInfo = line.split(",");
+                int publicationYr = Integer.parseInt(bookInfo[3]);
+                int numCopies = Integer.parseInt(bookInfo[4]);
+                Book newBook = new Book(bookInfo[0], bookInfo[1], bookInfo[2], publicationYr, numCopies);
+                addBook(newBook);
             }
         }
         catch (Exception ex) { // change to relevant exception
