@@ -1,7 +1,13 @@
 import java.util.Scanner;
+import java.util.Set;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.ArrayList;
-
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 /**
  * A library management class. Has a simple shell that users can interact with to add/remove/checkout/list books in the library.
  * Also allows saving the library state to a file and reloading it from the file.
@@ -97,9 +103,23 @@ public class Library {
     /**
      * Saves the contents of this library to the given file.
      */
-    public void save(String filename) {
-        // TODO: Implement this method.
-        throw new UnsupportedOperationException("not implemented");
+    public void save(String filename) { 
+        File outFile = new File(filename);
+
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outFile));
+            Set<Map.Entry<String, ArrayList<Book>>> bookSet = bookDatabase.entrySet();
+            for (Map.Entry<String, ArrayList<Book>> item : bookSet) {
+                ArrayList<Book> bookArr = item.getValue();
+                for (Book book : bookArr) {
+                    //add a new formatted line for each book, containg all of the necessary data:
+                    //title, author, checked in/out, publish date, isbn
+                }
+            }
+        }
+        catch (Exception ex) { // change to relevant exception
+            //throw whatever
+        }
     }
 
     /**
@@ -107,8 +127,20 @@ public class Library {
      * in this library is cleared before loading from the file.
      */
     public void load(String filename) {
-        // TODO: Implement this method.
-        throw new UnsupportedOperationException("not implemented");
+        File inFile = new File(filename);
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(inFile));
+            String line; 
+            while (((line = reader.readLine()) != null)) {
+                //each line has data for a book w/ specific formatting
+                // reading in all the data and then 
+                //add book to hashmap
+                //add isbn & author|title pair to secondary hashmap
+            }
+        }
+        catch (Exception ex) { // change to relevant exception
+            //throw whatever
+        }
     }
 
 	public static void main(String[] args) {
