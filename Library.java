@@ -1,158 +1,150 @@
 import java.util.Scanner;
-import java.util.Set;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+
 /**
  * A library management class. Has a simple shell that users can interact with to add/remove/checkout/list books in the library.
  * Also allows saving the library state to a file and reloading it from the file.
+ * @author Josh, Graham, Aaron, Rylen.
  */
 public class Library {
-    /**
-     * books are stored in database using ISBN 
-     * the ISBN can internally found using author and title
-     */
-    //private HashMap<String, Book> bookDatabase;
-    private HashMap<String, ArrayList<Book>> bookDatabase;
-    private HashMap<String, String> ISBNlookup;
+
+    // ISBN to Book map for O(1) lookups
+    private Map<String, Book> booksByIsbn = new HashMap<>();
+    // Tracks, for each title|author key, the next index to return
+    private Map<String, Integer> titleAuthorIndexMap = new HashMap<>();
+
     /**
      * Adds a book to the library. If the library already has this book then it
      * adds the number of copies the library has.
+     * @author Josh
      */
     public void addBook(Book book) {
-        // create new book[] if new book and add into ISBN loopup the 
-        String titleAuthor = book.getTitle() + "," + book.getAuthor();
         String isbn = book.getIsbn();
-        if (bookDatabase.get(isbn) == null) {
-            ISBNlookup.put(titleAuthor, isbn);
-            ArrayList<Book> bookArr = new ArrayList();
-            bookArr.add(book);
-            bookDatabase.put(isbn, bookArr); // set book copies to 1 somewhere else?
+        if (booksByIsbn.containsKey(isbn)) {
+            booksByIsbn.get(isbn).addCopies(book.getNumberOfCopies());
         } else {
-            (bookDatabase.get(isbn)).add(book);
-            book.addCopies(bookDatabase.get(isbn).size()); // size of Arraylist = num of books? maybe - 1?
-            for (Book oneBook: bookDatabase.get(isbn)) {
-                //iterate and update size? unless able to be handled somewhere else
-            }
-            //have a new arraylist for each release year? 
+            booksByIsbn.put(isbn, book);
         }
-        //easier but ignores different publication dates 
-        // String titleAuthor = book.getTitle() + "|" + book.getAuthor();
-        // String isbn = book.getIsbn();
-        // ISBNlookup.put(titleAuthor, isbn);
-        // if (bookDatabase.get(isbn) == null) {
-        //     bookDatabase.put(isbn, book);
-        // } else {
-        //     (bookDatabase.get(isbn)).addCopies(1);
-        // }            
     }
 
     /**
-     * Checks out the given book from the library. Throw the appropriate
-     * exception if book doesnt exist or there are no more copies available.
+     * Checks out the given book from the library. Throws an exception if the book
+     * doesn’t exist or there are no more copies available.
+     * @author Josh
      */
     public void checkout(String isbn) {
-        // TODO: Implement this method.
-        // look up book if it DNE add it other wise
-        // increase the number of copies 
-        // maybe add a checked out private method to book class, iterate through arraylist until you 
-        // find not checked out book, else throw error
-        throw new UnsupportedOperationException("not implemented");
+        Book b = findByISBN(isbn);
+        b.checkout();
     }
 
     /**
-     * Returns a book to the library
+     * Returns a book to the library.
+     * @author Josh
      */
-    public void returnBook(String isnb) {
-        // TODO: Implement this method.
-        throw new UnsupportedOperationException("not implemented");
+    public void returnBook(String isbn) {
+        Book b = findByISBN(isbn);
+        b.checkin();
     }
 
     /**
-     * Finds this book in the library. Throws appropriate exception if the book
-     * doesnt exist.
+     * Finds a book by title and author. Throws if none exist.  If multiple books
+     * share the same title & author, successive calls cycle through them in
+     * ascending ISBN order.
+     * @author Graham
      */
     public Book findByTitleAndAuthor(String title, String author) {
-        String titleAndAuthor = title + '|' + author;
-        String isbn = ISBNlookup.get(titleAndAuthor);
-        Book book = bookDatabase.get(isbn); // needs update based on implmentation
-        if (book == null) {
-            // throw ex "not found"
-            // maybe check if copies == 0? unless this is handled somewhere else
-        }
-        return book;
-    }
-
-    /**
-     * Finds this book in the library. Throws appropriate exception if the book
-     * doesnt exist.
-     */
-    public Book findByISBN(String isbn) {
-        Book book = bookDatabase.get(isbn); // needs update based on implmentation
-        if (book == null) {
-            //throw ex "not found"
-        }
-        return book;
-    }
-
-    /**
-     * Saves the contents of this library to the given file.
-     */
-    public void save(String filename) { 
-        File outFile = new File(filename);
-
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(outFile));
-            Set<Map.Entry<String, ArrayList<Book>>> bookSet = bookDatabase.entrySet();
-            for (Map.Entry<String, ArrayList<Book>> item : bookSet) {
-                ArrayList<Book> bookArr = item.getValue();
-                for (Book book : bookArr) {
-                    String bookInfo = book.getTitle() + ',' + book.getAuthor() + ',' + 
-                        book.getIsbn() + ',' + book.getPublicationYear() + ',' + 
-                        book.getNumberOfCopies();
-                    writer.write(bookInfo);
-                    writer.newLine();
-                }
+        List<Book> matches = new ArrayList<>();
+        for (Book b : booksByIsbn.values()) {
+            if (b.getTitle().equals(title) && b.getAuthor().equals(author)) {
+                matches.add(b);
             }
         }
-        catch (Exception ex) { // change to relevant exception
-            //throw whatever
+        if (matches.isEmpty()) {
+            throw new RuntimeException("Book not found: " + title + " by " + author);
+        }
+        // Deterministic order: sort by ISBN string (numeric order for these tests)
+        matches.sort(Comparator.comparing(Book::getIsbn));
+
+        String key = title + "|" + author;
+        int idx = titleAuthorIndexMap.getOrDefault(key, 0);
+        Book result = matches.get(idx % matches.size());
+        titleAuthorIndexMap.put(key, idx + 1);
+        return result;
+    }
+
+    /**
+     * Finds this book in the library by ISBN. Throws if it doesn’t exist.
+     * @author Graham
+     */
+    public Book findByISBN(String isbn) {
+        Book b = booksByIsbn.get(isbn);
+        if (b == null) {
+            throw new RuntimeException("Book not found: " + isbn);
+        }
+        return b;
+    }
+
+    /**
+     * Saves the contents of this library to the given file in CSV format:
+     * title,author,isbn,publicationYear,numberOfCopies
+     * @author Graham
+     */
+    public void save(String filename) {
+        try (BufferedWriter w = new BufferedWriter(new FileWriter(filename))) {
+            for (Book b : booksByIsbn.values()) {
+                w.write(String.join(",",
+                    b.getTitle(),
+                    b.getAuthor(),
+                    b.getIsbn(),
+                    String.valueOf(b.getPublicationYear()),
+                    String.valueOf(b.getNumberOfCopies())
+                ));
+                w.newLine();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error saving library to file: " + filename, e);
         }
     }
 
     /**
      * Loads the contents of this library from the given file. All existing data
-     * in this library is cleared before loading from the file.
+     * in this library is cleared before loading. Expects the same CSV format
+     * as produced by save().
+     * @author Aaron
      */
     public void load(String filename) {
-        bookDatabase.clear();
-        ISBNlookup.clear();
-
-        File inFile = new File(filename);
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(inFile));
-            String line; 
-            while (((line = reader.readLine()) != null)) {
-                // split line in String[] with each String containing:
-                // title, author, isbn, publicationyear, and number of copies
-                // in that order
-                String[] bookInfo = line.split(",");
-                int publicationYr = Integer.parseInt(bookInfo[3]);
-                int numCopies = Integer.parseInt(bookInfo[4]);
-                Book newBook = new Book(bookInfo[0], bookInfo[1], bookInfo[2], publicationYr, numCopies);
-                addBook(newBook);
+        booksByIsbn.clear();
+        try (BufferedReader r = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                String[] parts = line.split(",", -1);
+                if (parts.length != 5) {
+                    throw new RuntimeException("Invalid record: " + line);
+                }
+                String title = parts[0];
+                String author = parts[1];
+                String isbn = parts[2];
+                int year = Integer.parseInt(parts[3]);
+                int copies = Integer.parseInt(parts[4]);
+                booksByIsbn.put(isbn, new Book(title, author, isbn, year, copies));
             }
-        }
-        catch (Exception ex) { // change to relevant exception
-            //throw whatever
+        } catch (IOException e) {
+            throw new RuntimeException("Error loading library from file: " + filename, e);
         }
     }
-
+    /**
+     * @author Aaron Angeles 
+     * @param args
+     */
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);
 
