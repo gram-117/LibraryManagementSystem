@@ -1,16 +1,18 @@
+import java.util.Objects;
+
 /**
  * Encapusulates information about a book.
- * @author 
+ * @author Balaji 
  */
 public class Book {
     String title;
     String author;
     String isbn;
     int publicationYear;
-    // number of copies in the library
-    // NOTE: This is not the number of copies available in the library
-    int numberOfCopies; 
-    int copiesav;
+    // number of copies currently available in the library
+    int numberOfCopies;
+    // total number of copies the library owns
+    private int totalCopies;
 
     /**
      * Constructor. Most properties (except number of copies are read only)
@@ -21,7 +23,7 @@ public class Book {
         this.isbn = isbn;
         this.publicationYear = publicationYear;
         this.numberOfCopies = numberOfCopies;
-        this.copiesav = numberOfCopies;
+        this.totalCopies = numberOfCopies;
     }
 
     /**
@@ -53,59 +55,68 @@ public class Book {
     }
 
     /**
-     * @return The number of copies of this book.
+     * @return The number of copies of this book currently available.
      */
     public int getNumberOfCopies() {
         return numberOfCopies;
     }
 
     /**
-     * Adds the given mumber of copies of this book to the library.
+     * Adds the given number of copies of this book to the library.
+     * @param numCopiesToAdd how many copies to add
      */
     public void addCopies(int numCopiesToAdd) {
         numberOfCopies += numCopiesToAdd;
-        copiesav += numCopiesToAdd;
+        totalCopies += numCopiesToAdd;
     }
 
-    /** 
-     * Checks out a book (decrements number of copies available in the library)
+    /**
+     * Checks out a book (decrements number of copies available in the library).
      * @throws RuntimeException if no copies are available to check out.
+     * @author Rylen
      */
     public void checkout() {
-        if(copiesav == 0)
-            throw new IllegalStateException("There are no copies :(");
-        else
-            copiesav--;
-    } 
+        if (numberOfCopies <= 0) {
+            throw new RuntimeException("No copies available for checkout");
+        }
+        numberOfCopies--;
+    }
 
-    /** 
+    /**
      * Checks in a book into the library.
      * @throws RuntimeException if no copies have been checked out.
+     * @author Rylen
      */
     public void checkin() {
-        if(copiesav == numberOfCopies)
-            throw new IllegalStateException("No copies have been checked out :/");
-        else
-            copiesav++;
+        if (numberOfCopies >= totalCopies) {
+            throw new RuntimeException("All copies are already in the library");
+        }
+        numberOfCopies++;
     }
 
+    /**
+     * Computes a hash code consistent with equals, based on title, author, and ISBN
+     * @return hash code for this book
+     * @author Rylen
+     */
     @Override
     public int hashCode() {
-        int result = 11;     
-        
-        result = 31 * result + (title  != null ? title.hashCode()  : 0);
-        result = 31 * result + (author != null ? author.hashCode() : 0);
-        result = 31 * result + (isbn   != null ? isbn.hashCode()   : 0);
-        
-        return result;
+        return Objects.hash(title, author, isbn);
     }
 
+    /**
+     * Two books are the same only if the title, author, and ISBN match
+     * @param obj other object to compare
+     * @return true if this and obj represent the same book (title, author, isbn)
+     * @author Rylen
+     */
     @Override
-    public boolean equals(Object that) {
-        // NOTE: Two books are the same only if the Title, Author, and ISBN matches
-        if (this == that) return true;
-        if (!(that instanceof Book)) return false;
-        Book that = (Book)that;
-        return this.author.equals(that.getAuthor()) && this.title.equals(that.getTitle()) && this.isbn.equals(that.getIsbn())
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Book)) return false;
+        Book that = (Book) obj; 
+        return Objects.equals(title, that.title)
+            && Objects.equals(author, that.author)
+            && Objects.equals(isbn, that.isbn);
     }
 }
