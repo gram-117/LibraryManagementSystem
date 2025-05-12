@@ -19,40 +19,54 @@ public class Library {
 
     // ISBN to Book map for O(1) lookups
     private Map<String, Book> booksByIsbn = new HashMap<>();
-    // Tracks, for each title|author key, the next index to return
+    // Tracks, for each title|author key, the next index to return (for your team's other methods)
     private Map<String, Integer> titleAuthorIndexMap = new HashMap<>();
 
     /**
      * Adds a book to the library. If the library already has this book then it
-     * adds the number of copies the library has.
+     * adds the number of copies.
      * @author Josh
      */
     public void addBook(Book book) {
         String isbn = book.getIsbn();
         if (booksByIsbn.containsKey(isbn)) {
             booksByIsbn.get(isbn).addCopies(book.getNumberOfCopies());
+            System.out.println("Added more copies of existing book: " + book.getTitle());
         } else {
             booksByIsbn.put(isbn, book);
+            System.out.println("Book added successfully: " + book.getTitle());
         }
     }
 
     /**
-     * Checks out the given book from the library. Throws an exception if the book
-     * doesn’t exist or there are no more copies available.
+     * Checks out the given book from the library.
+     * Throws RuntimeException if book doesn't exist or no copies available.
      * @author Josh
      */
     public void checkout(String isbn) {
         Book b = findByISBN(isbn);
+        if (b == null) {
+            throw new RuntimeException("Book with ISBN " + isbn + " not found.");
+        }
+        if (!b.isAvailable()) {
+            throw new RuntimeException("No copies available for book: " + b.getTitle());
+        }
         b.checkout();
+        System.out.println("Checked out successfully: " + b.getTitle());
     }
 
     /**
      * Returns a book to the library.
+     * Throws RuntimeException if book doesn't exist.
      * @author Josh
      */
     public void returnBook(String isbn) {
         Book b = findByISBN(isbn);
+        if (b == null) {
+            throw new RuntimeException("Book with ISBN " + isbn + " not found.");
+        }
         b.checkin();
+        System.out.println("Returned successfully: " + b.getTitle());
     }
 
     /**
