@@ -24,29 +24,42 @@ public class Library {
 
     /**
      * Adds a book to the library. If the library already has this book then it
-     * adds the number of copies.
-     * @author Josh
-     * @param book the Book object to add or update in the library
-     * @complexity O(1) average case (HashMap insert/update)
+     * adds the number of copies the library has.
+     * 
+     * isbn is related a specific author and title. if a book has the same 
+     * title as a book that has already been entered but different isbn, 
+     * it is assumed to be an error and (IT IS IGNORED/ERROR IS THROWN)
+     * 
+     * if multiple copies of the same book (same isbn) are added but they have
+     * different publication dates, then all copies of the book return the 
+     * publication date of the first book added when .getPublicationYear() is 
+     * called
+     * If significant changes are made across different copies of the book, 
+     * the book is most likley to have a different ISBN and this shouldn't 
+     * cause any issues
      */
     public void addBook(Book book) {
+        // create new book if new book and add into ISBN lookup table 
+        String bookKey = book.getTitle() + "," + book.getAuthor();
         String isbn = book.getIsbn();
-        if (booksByIsbn.containsKey(isbn)) {
-            booksByIsbn.get(isbn).addCopies(book.getNumberOfCopies());
-            System.out.println("Added more copies of existing book: " + book.getTitle());
-        } else {
-            booksByIsbn.put(isbn, book);
-            System.out.println("Book added successfully: " + book.getTitle());
+        // new new book then add to database
+        if (bookDatabase.get(isbn) == null) {
+            ISBNlookup.put(bookKey, isbn);
+            bookDatabase.put(isbn, book); 
+        } 
+        // if title and author matches expected isbn add 1 copy
+        else if (book.getIsbn() == ISBNlookup.get(bookKey)) {
+            (bookDatabase.get(isbn)).addCopies(1);
+        } 
+        else {
+            // else throw an error or do nothing
+        }
         }
     }
 
     /**
-     * Checks out the given book from the library.
-     * Throws RuntimeException if book doesn't exist or no copies available.
-     * @author Josh
-     * @param isbn the ISBN of the book to check out
-     * @throws RuntimeException if the book is not found or no copies are available
-     * @complexity O(1) average case (HashMap lookup + constant update)
+     * Checks out the given book from the library. Throw the appropriate
+     * exception if book doesnt exist or there are no more copies available.
      */
     public void checkout(String isbn) {
         Book b = findByISBN(isbn);
