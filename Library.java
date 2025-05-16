@@ -20,7 +20,7 @@ public class Library {
     // ISBN to Book map for O(1) lookups
     private Map<String, Book> booksByIsbn = new HashMap<>();
     // Tracks, for each title|author key, the next index to return (for duplicate title/author)
-    private Map<String, Integer> titleAuthorIndexMap = new HashMap<>();
+    private Map<String, String> IsbnLookup = new HashMap<>();
 
     /**
      * Adds a book to the library. If the library already has this book then it
@@ -43,17 +43,16 @@ public class Library {
         String bookKey = book.getTitle() + "," + book.getAuthor();
         String isbn = book.getIsbn();
         // new new book then add to database
-        if (bookDatabase.get(isbn) == null) {
-            ISBNlookup.put(bookKey, isbn);
-            bookDatabase.put(isbn, book); 
+        if (booksByIsbn.get(isbn) == null) {
+            IsbnLookup.put(bookKey, isbn);
+            booksByIsbn.put(isbn, book); 
         } 
         // if title and author matches expected isbn add 1 copy
-        else if (book.getIsbn() == ISBNlookup.get(bookKey)) {
-            (bookDatabase.get(isbn)).addCopies(1);
+        else if (book.getIsbn() == IsbnLookup.get(bookKey)) {
+            (booksByIsbn.get(isbn)).addCopies(1);
         } 
         else {
             // else throw an error or do nothing
-        }
         }
     }
 
@@ -91,25 +90,12 @@ public class Library {
      * @param author the author of the book to find
      * @return the matching Book object
      * @throws RuntimeException if no matching book is found
-     * @complexity O(n + m log m) n = total books m = matching books
+     * @complexity O(1) HashMap look up 
      */
     public Book findByTitleAndAuthor(String title, String author) {
-        List<Book> matches = new ArrayList<>();
-        for (Book b : booksByIsbn.values()) {
-            if (b.getTitle().equals(title) && b.getAuthor().equals(author)) {
-                matches.add(b);
-            }
-        }
-        if (matches.isEmpty()) {
-            throw new RuntimeException("Book not found: " + title + " by " + author);
-        }
-        matches.sort(Comparator.comparing(Book::getIsbn));
+        String bookKey = title + "," + author;
+        return booksByIsbn.get(IsbnLookup.get(bookKey));
 
-        String key = title + "|" + author;
-        int idx = titleAuthorIndexMap.getOrDefault(key, 0);
-        Book result = matches.get(idx % matches.size());
-        titleAuthorIndexMap.put(key, idx + 1);
-        return result;
     }
 
     /**
