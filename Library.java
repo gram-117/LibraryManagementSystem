@@ -11,40 +11,48 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * A library management class. Has a simple shell that users can interact with to add/remove/checkout/list books in the library.
- * Also allows saving the library state to a file and reloading it from a file.
- * @author Josh, Graham, Aaron, Rylen.
- */
+* A library management class. Has a simple shell that users can interact with to add/remove/checkout/list books in the library.
+* Also allows saving the library state to a file and reloading it from a file.
+* 
+* isbn is related a specific author and title. if a book has the same 
+* title as a book that has already been entered but different isbn, 
+* it is assumed to be an error. This is done as books with same title and author 
+* which have signifcant differences within edition will likley have a difference 
+* in title (or authors) to indicate so.
+* ex: 
+* Calculus 8th ed. by James Stewart, ISBN: 112 
+* Calculus 9th ed. by James Stewart, ISBN: 114
+* 
+* if multiple copies of the same book (same isbn) are added but they have
+* different publication dates, then all copies of the book return the 
+* publication date of the first book added when .getPublicationYear() is 
+* called
+* 
+* @author Josh, Graham, Aaron, Rylen.
+*/
+
+
 public class Library {
 
     // ISBN to Book map for O(1) lookups
     private Map<String, Book> booksByIsbn = new HashMap<>();
     // Tracks, for each title|author key, the next index to return (for duplicate title/author)
-    private Map<String, String> IsbnLookup = new HashMap<>();
+    private Map<String, String> isbnLookup = new HashMap<>();
 
     /**
      * Adds a book to the library. If the library already has this book then it
      * adds the number of copies the library has.
      * 
-     * isbn is related a specific author and title. if a book has the same 
-     * title as a book that has already been entered but different isbn, 
-     * it is assumed to be an error and (IT IS IGNORED/ERROR IS THROWN)
-     * 
-     * if multiple copies of the same book (same isbn) are added but they have
-     * different publication dates, then all copies of the book return the 
-     * publication date of the first book added when .getPublicationYear() is 
-     * called
-     * If significant changes are made across different copies of the book, 
-     * the book is most likley to have a different ISBN and this shouldn't 
-     * cause any issues
+     * @author Graham 
+     * @param book book to be added to library 
      */
     public void addBook(Book book) {
         // create new book if new book and add into ISBN lookup table 
-        String bookKey = book.getTitle() + "," + book.getAuthor();
+        String isbnKey = book.getTitle() + "," + book.getAuthor();
         String isbn = book.getIsbn();
         // new new book then add to database
-        if (!booksByIsbn.containsKey(bookKey)) {
-            IsbnLookup.put(bookKey, isbn);
+        if (!booksByIsbn.containsKey(isbn)) {
+            isbnLookup.put(isbnKey, isbn);
             booksByIsbn.put(isbn, book); 
         } 
         // if title and author matches expected isbn add 1 copy
@@ -54,8 +62,8 @@ public class Library {
         else {
             // if title + author doesnt matched expected isbn throw error 
             throw new IllegalArgumentException(
-                "ISBN doesnt match title-author pair: " + bookKey + 
-                ". Expected ISBN: " + IsbnLookup.get(bookKey) + 
+                "ISBN doesnt match title-author pair: " + isbnKey + 
+                ". Expected ISBN: " + isbnLookup.get(isbnKey) + 
                 ", got: " + isbn);
         }
     }
@@ -63,6 +71,9 @@ public class Library {
     /**
      * Checks out the given book from the library. Throw the appropriate
      * exception if book doesnt exist or there are no more copies available.
+     * 
+     * @author 
+     * @param isbn of the book to be checked out 
      */
     public void checkout(String isbn) {
         Book b = findByISBN(isbn);
@@ -75,6 +86,7 @@ public class Library {
 
     /**
      * Returns a book to the library.
+     * 
      * @author Josh
      * @param isbn the ISBN of the book to return
      * @complexity O(1) average case (HashMap lookup + constant update)
@@ -86,9 +98,8 @@ public class Library {
     }
 
     /**
-     * Finds a book by title and author. Throws if none exist. If multiple books
-     * share the same title & author, successive calls cycle through them in
-     * ascending ISBN order.
+     * Finds a book by title and author. Throws if none exist.
+     * 
      * @author Graham
      * @param title the title of the book to find
      * @param author the author of the book to find
@@ -98,12 +109,13 @@ public class Library {
      */
     public Book findByTitleAndAuthor(String title, String author) {
         String bookKey = title + "," + author;
-        return booksByIsbn.get(IsbnLookup.get(bookKey));
+        return booksByIsbn.get(isbnLookup.get(bookKey));
 
     }
 
     /**
      * Finds this book in the library by ISBN. Throws if it doesn’t exist.
+     * 
      * @author Graham
      * @param isbn the ISBN of the book to find
      * @return the matching Book object
@@ -121,6 +133,7 @@ public class Library {
     /**
      * Saves the contents of this library to the given file in CSV format:
      * title,author,isbn,publicationYear,numberOfCopies
+     * 
      * @author Graham
      * @param filename the path to the file where library data will be written
      * @throws RuntimeException if an I/O error occurs during saving
@@ -129,7 +142,7 @@ public class Library {
     public void save(String filename) {
         try (BufferedWriter w = new BufferedWriter(new FileWriter(filename))) {
             for (Book b : booksByIsbn.values()) {
-                w.write(String.join("|,|",
+                w.write(String.join("-,-",
                     b.getTitle(),
                     b.getAuthor(),
                     b.getIsbn(),
@@ -147,6 +160,7 @@ public class Library {
      * Loads the contents of this library from the given file. All existing data
      * in this library is cleared before loading. Expects the same CSV format
      * as produced by save().
+     * 
      * @author Aaron
      * @param filename the path to the file from which library data will be read
      * @throws RuntimeException if an I/O error occurs or the file format is invalid
@@ -157,7 +171,7 @@ public class Library {
         try (BufferedReader r = new BufferedReader(new FileReader(filename))) {
             String line;
             while ((line = r.readLine()) != null) {
-                String[] parts = line.split("|,|", -1);
+                String[] parts = line.split("-,-", -1);
                 if (parts.length != 5) {
                     throw new RuntimeException("Invalid record: " + line);
                 }
@@ -166,7 +180,10 @@ public class Library {
                 String isbn = parts[2];
                 int year = Integer.parseInt(parts[3]);
                 int copies = Integer.parseInt(parts[4]);
-                booksByIsbn.put(isbn, new Book(title, author, isbn, year, copies));
+                String isbnKey = title + "," + author;
+                Book newBook = new Book(title, author, isbn, year, copies);
+                this.addBook(newBook);
+                isbnLookup.put(isbnKey, isbn);
             }
         } catch (IOException e) {
             throw new RuntimeException("Error loading library from file: " + filename, e);
@@ -184,6 +201,7 @@ public class Library {
      *   save <filename>
      *   load <filename>
      *   exit
+     * 
      * @author Aaron
      * @complexity O(1) per iteration for most commands, O(n + m log m) for findByTitleAndAuthor
      */
