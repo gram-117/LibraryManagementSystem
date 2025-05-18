@@ -43,16 +43,20 @@ public class Library {
         String bookKey = book.getTitle() + "," + book.getAuthor();
         String isbn = book.getIsbn();
         // new new book then add to database
-        if (booksByIsbn.get(isbn) == null) {
+        if (!booksByIsbn.containsKey(bookKey)) {
             IsbnLookup.put(bookKey, isbn);
             booksByIsbn.put(isbn, book); 
         } 
         // if title and author matches expected isbn add 1 copy
-        else if (book.getIsbn() == IsbnLookup.get(bookKey)) {
+        else if ((book).equals(booksByIsbn.get(isbn))) {
             (booksByIsbn.get(isbn)).addCopies(1);
         } 
         else {
-            // else throw an error or do nothing
+            // if title + author doesnt matched expected isbn throw error 
+            throw new IllegalArgumentException(
+                "ISBN doesnt match title-author pair: " + bookKey + 
+                ". Expected ISBN: " + IsbnLookup.get(bookKey) + 
+                ", got: " + isbn);
         }
     }
 
@@ -125,7 +129,7 @@ public class Library {
     public void save(String filename) {
         try (BufferedWriter w = new BufferedWriter(new FileWriter(filename))) {
             for (Book b : booksByIsbn.values()) {
-                w.write(String.join(",",
+                w.write(String.join("|,|",
                     b.getTitle(),
                     b.getAuthor(),
                     b.getIsbn(),
@@ -153,7 +157,7 @@ public class Library {
         try (BufferedReader r = new BufferedReader(new FileReader(filename))) {
             String line;
             while ((line = r.readLine()) != null) {
-                String[] parts = line.split(",", -1);
+                String[] parts = line.split("|,|", -1);
                 if (parts.length != 5) {
                     throw new RuntimeException("Invalid record: " + line);
                 }
