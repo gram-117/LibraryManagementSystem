@@ -203,7 +203,7 @@ public class Library {
      *   exit
      * 
      * @author Aaron
-     * @complexity O(1) per iteration for most commands, O(n + m log m) for findByTitleAndAuthor
+     * @complexity O(1) per iteration for most commands
      */
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -215,21 +215,20 @@ public class Library {
 
             if (line.startsWith("add")) {
                 String[] parts = line.split(" ");
-                if (parts.length != 6) {
+                if (parts.length != 5) {
                     System.out.println("Error: invalid add command");
                     continue;
                 }
                 String title = parts[1], author = parts[2], isbn = parts[3];
-                int year, copies;
+                int year;
                 try {
                     year   = Integer.parseInt(parts[4]);
-                    copies = Integer.parseInt(parts[5]);
                 } catch (NumberFormatException e) {
                     System.out.println("Error: invalid number format");
                     continue;
                 }
-                try {
-                    library.addBook(new Book(title, author, isbn, year, copies));
+                try { // add one copy at a time 
+                    library.addBook(new Book(title, author, isbn, year, 1)); 
                 } catch (RuntimeException e) {
                     System.out.println("Error: " + e.getMessage());
                 }
