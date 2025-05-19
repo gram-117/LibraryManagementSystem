@@ -1,9 +1,7 @@
 import java.util.Scanner;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
@@ -40,7 +38,7 @@ public class Library {
     private Map<String, String> isbnLookup = new HashMap<>();
 
     /**
-     * Adds a book to the library. If the library already has this book then it
+     * Adds one copy of a book to the library. If the library already has this book then it
      * adds the number of copies the library has.
      * 
      * @author Graham 
@@ -74,11 +72,12 @@ public class Library {
      * 
      * @author 
      * @param isbn of the book to be checked out 
+     * @throws NoSuchElementException if there are not copies in library 
      */
     public void checkout(String isbn) {
         Book b = findByISBN(isbn);
         if (b.getNumberOfCopies() <= 0) {
-            throw new RuntimeException("No copies available for book: " + b.getTitle());
+            throw new NoSuchElementException("No copies available...");
         }
         b.checkout();
         System.out.println("Checked out successfully: " + b.getTitle());
@@ -104,11 +103,14 @@ public class Library {
      * @param title the title of the book to find
      * @param author the author of the book to find
      * @return the matching Book object
-     * @throws RuntimeException if no matching book is found
+     * @throws NoSuchElementException if no matching book is found
      * @complexity O(1) HashMap look up 
      */
     public Book findByTitleAndAuthor(String title, String author) {
         String bookKey = title + "," + author;
+        if (!isbnLookup.containsKey(bookKey)) {
+            throw new NoSuchElementException("Book not found: " + bookKey);
+        }
         return booksByIsbn.get(isbnLookup.get(bookKey));
 
     }
@@ -119,13 +121,13 @@ public class Library {
      * @author Graham
      * @param isbn the ISBN of the book to find
      * @return the matching Book object
-     * @throws RuntimeException if the book is not found
+     * @throws NoSuchElementException if the book is not found
      * @complexity O(1) average‐case (HashMap lookup)
      */
     public Book findByISBN(String isbn) {
         Book b = booksByIsbn.get(isbn);
         if (b == null) {
-            throw new RuntimeException("Book not found: " + isbn);
+            throw new NoSuchElementException("Book not found: " + isbn);
         }
         return b;
     }
@@ -152,7 +154,7 @@ public class Library {
                 w.newLine();
             }
         } catch (IOException e) {
-            throw new RuntimeException("Error saving library to file: " + filename, e);
+            throw new RuntimeException("Invalid record format");
         }
     }
 
@@ -168,6 +170,7 @@ public class Library {
      */
     public void load(String filename) {
         booksByIsbn.clear();
+        isbnLookup.clear();
         try (BufferedReader r = new BufferedReader(new FileReader(filename))) {
             String line;
             while ((line = r.readLine()) != null) {
@@ -183,17 +186,17 @@ public class Library {
                 String isbnKey = title + "," + author;
                 Book newBook = new Book(title, author, isbn, year, copies);
                 this.addBook(newBook);
-                isbnLookup.put(isbnKey, isbn);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Error loading library from file: " + filename, e);
+            throw new RuntimeException("Error loading library from file: " + 
+                filename, e);
         }
     }
 
     /**
      * Runs a simple shell that allows users to interact with the library.
      * The user can type the following commands:
-     *   add <title> <author> <isbn> <year> <copies>
+     *   add <title> <author> <isbn> <year> 
      *   checkout <isbn>
      *   findByTitleAndAuthor <title> <author>
      *   return <isbn>
